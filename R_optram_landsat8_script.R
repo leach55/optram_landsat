@@ -6,7 +6,7 @@ pkg_list = c(
 )
 
 # installs packages that are not installed 
-installed_packages <- pkg_list %in% rownames(installed.packages())
+installed_packages = pkg_list %in% rownames(installed.packages())
 if (any(installed_packages == FALSE)) {
   install.packages(pkg_list[!installed_packages])
 }
@@ -53,28 +53,28 @@ if (!dir.exists(STR_dir)) {
 # calculate NDVI and STR
 # return raster
 
-crop_index <- function(tif_list, study_area) {
+crop_index = function(tif_list, study_area) {
   # Read list of TIF files into stack
   # Crop to extent of testing polygons
   # ---------------------------
   #select wanted bands landsat 8/9
-  tif_list_08 <- tif_list[grep(pattern="LC08_|LC09", x=tif_list)]
+  tif_list_08 = tif_list[grep(pattern="LC08_|LC09", x=tif_list)]
   #tif_list_08 <- tif_list_08[grep(pattern="_SR_", x=tif_list_08)]
   # Do not use B1 (aerosol band)
-  tif_list_08 <- tif_list_08[grep(pattern = "B2|B3|B4|B5|B6|B7",
+  tif_list_08 = tif_list_08[grep(pattern = "B2|B3|B4|B5|B6|B7",
                                   x = tif_list_08)]
-  tif_stk <- rast(tif_list_08)
+  tif_stk = rast(tif_list_08)
   
-  names(tif_stk) <- c("blue", "green", "red", "NIR", "SWIR1", "SWIR2")
-  cropped <- terra::crop(tif_stk, study_area)
+  names(tif_stk) = c("blue", "green", "red", "NIR", "SWIR1", "SWIR2")
+  cropped = terra::crop(tif_stk, study_area)
   cropped = terra::mask(cropped, study_area) 
   
   #rescale factor for refletance 
   # landsat 8 https://prd-wret.s3.us-west-2.amazonaws.com/assets/palladium/production/atoms/files/LSDS-1619_Landsat-8-Collection2_Level-2_Science-Product-Guide-v3.pdf
   cropped = cropped*0.0000275 - 0.2
   
-  ndvi <- ((cropped$NIR - cropped$red) / (cropped$NIR + cropped$red))
-  STR <- ((1 -cropped$SWIR2)^2)/(2*cropped$SWIR2) # check witch SWIR band is needed and 
+  ndvi = ((cropped$NIR - cropped$red) / (cropped$NIR + cropped$red))
+  STR = ((1 -cropped$SWIR2)^2)/(2*cropped$SWIR2) # check witch SWIR band is needed and 
   
   names(ndvi) = "NDVI" 
   names(STR) = "STR"
@@ -115,18 +115,18 @@ run_function = lapply(img_file_list, function(x){
   tif_list = list.files(path = x, pattern = "TIF$", full.names = TRUE, recursive = TRUE)
   crop_index_image = crop_index(tif_list = tif_list, study_area = aoi)
   
-  r_split <- strsplit(x=tif_list[[4]], split = ".", fixed = TRUE)
-  r_split <- unlist(r_split)[2]
-  r_split <- strsplit(x=r_split, split = "/", fixed = TRUE)
-  r_split <- unlist(r_split)[3]
-  r_date <- substr(r_split, 18, nchar(r_split)-15)
+  r_split = strsplit(x=tif_list[[4]], split = ".", fixed = TRUE)
+  r_split = unlist(r_split)[2]
+  r_split = strsplit(x=r_split, split = "/", fixed = TRUE)
+  r_split = unlist(r_split)[3]
+  r_date = substr(r_split, 18, nchar(r_split)-15)
   
   rastname = paste("NDVI", r_date , sep="_") #get date
-  rastpath <- file.path(NDVI_dir, paste0(rastname, ".tif")) 
+  rastpath = file.path(NDVI_dir, paste0(rastname, ".tif")) 
   terra::writeRaster(x= crop_index_image$NDVI, filename = rastpath, overwrite = TRUE)
   
   rastname = paste("STR", r_date , sep="_") #get date
-  rastpath <- file.path(STR_dir, paste0(rastname, ".tif")) 
+  rastpath = file.path(STR_dir, paste0(rastname, ".tif")) 
   terra::writeRaster(x= crop_index_image$STR, filename = rastpath, overwrite = TRUE)
   
   return(crop_index_image)
@@ -179,42 +179,42 @@ STR_tif_list = list.files(STR_dir, full.names = TRUE, recursive = TRUE )
 # 
 # write.csv(NDVI_df, "output/NDVI_df.csv") #save as CSV
 
-STR_df_list <- lapply(STR_tif_list, function(f){
-  date_str <- unlist(strsplit(basename(f), split = "_", fixed = TRUE))[2]
+STR_df_list = lapply(STR_tif_list, function(f){
+  date_str = unlist(strsplit(basename(f), split = "_", fixed = TRUE))[2]
   date_str = unlist(strsplit(basename(date_str), split = "." ,fixed= TRUE))[1]
-  STR <- terra::rast(f)
-  STR_1_df <- as.data.frame(STR, xy=TRUE)
+  STR = terra::rast(f)
+  STR_1_df = as.data.frame(STR, xy=TRUE)
   names(STR_1_df) <- c("x", "y", "STR")
   STR_1_df['Date'] <- as.Date(date_str, format="%Y%m%d")
   return(STR_1_df)
 })
 
-STR_df <- do.call(rbind, STR_df_list)
+STR_df = do.call(rbind, STR_df_list)
 
 
 #create list of NDVI images
 NDVI_tif_list = list.files(NDVI_dir, full.names = TRUE, recursive = TRUE )
 
-NDVI_df_list <- lapply(NDVI_tif_list, function(f){
+NDVI_df_list = lapply(NDVI_tif_list, function(f){
   # Get image date
-  date_str <- unlist(strsplit(basename(f), split="_", fixed=TRUE))[2]
+  date_str = unlist(strsplit(basename(f), split="_", fixed=TRUE))[2]
   date_str = unlist(strsplit(basename(date_str), split = "." ,fixed= TRUE))[1]
   NDVI <- terra::rast(f)
   # Revert to original scale
   #VI <- VI/10000.0
-  NDVI_1_df <- as.data.frame(NDVI, xy=TRUE)
-  names(NDVI_1_df) <- c("x", "y", "NDVI")
-  NDVI_1_df['Date'] <- as.Date(date_str, format="%Y%m%d")
+  NDVI_1_df = as.data.frame(NDVI, xy=TRUE)
+  names(NDVI_1_df) = c("x", "y", "NDVI")
+  NDVI_1_df['Date'] = as.Date(date_str, format="%Y%m%d")
   return(NDVI_1_df)
 })
 
-NDVI_df <- do.call(rbind, NDVI_df_list)
+NDVI_df <=do.call(rbind, NDVI_df_list)
 
 # Merge VI and STR pixel data
-full_df <- dplyr::full_join(STR_df, NDVI_df)
-full_df <- full_df[stats::complete.cases(full_df),]
-df_file <- file.path(output_dir, "NDVI_STR_data.rds")
-df_file1 <- file.path(output_dir, "NDVI_STR_data.csv")
+full_df = dplyr::full_join(STR_df, NDVI_df)
+full_df = full_df[stats::complete.cases(full_df),]
+df_file = file.path(output_dir, "NDVI_STR_data.rds")
+df_file1 = file.path(output_dir, "NDVI_STR_data.csv")
 saveRDS(full_df, df_file)
 write.csv(full_df, df_file1)
 message("Saved: ", nrow(full_df), " rows of NDVI-STR data to: ", df_file)
@@ -412,6 +412,11 @@ plot_ndvi_str_cloud <- function(full_df,
 }
 
 plot_ndvi_str = plot_ndvi_str_cloud(full_df = full_df, coeffs = coef, aoi_file = aoi_path, output_dir = output_dir)
+
+
+
+
+
 
 
 
